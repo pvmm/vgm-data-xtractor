@@ -23,23 +23,14 @@ set(TOOL_VERSION "\"0.0.1\"")
 set(TOOL_DESCRIPTION "\"Sample raygui app\"")
 
 # Fetch raylib
-# Adding raylib
 FetchContent_Declare(
     raylib
     GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
     GIT_TAG "master"
     GIT_PROGRESS TRUE
     GIT_SHALLOW TRUE
-    #CONFIGURE_COMMAND cmake -S . -B build
-    #BUILD_COMMAND make
 )
 FetchContent_MakeAvailable(raylib)
-
-# Find raylib.h
-#file(GLOB_RECURSE raylib_h ${raylib_SOURCE_DIR} raylib.h)
-#list(GET raylib_h 0 raylib_h)
-#get_filename_component(RAYLIB_SRC ${raylib_h} DIRECTORY)
-#message("-- Set RAYLIB_SRC to ${RAYLIB_SRC}")
 
 # Fetch raygui library
 FetchContent_Declare(
@@ -48,8 +39,6 @@ FetchContent_Declare(
     GIT_TAG "master"
     GIT_PROGRESS TRUE
     GIT_SHALLOW TRUE
-    #CONFIGURE_COMMAND ""
-    #BUILD_COMMAND ""
 )
 FetchContent_MakeAvailable(raygui)
 
