@@ -1,8 +1,6 @@
 #ifndef _FUNCTIONS_H_
 #define _FUNCTIONS_H_
 
-void load_file(char* filename);
-
 char* get_file_name(char* path);
 
 void unload_dropped_files(void);

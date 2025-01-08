@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.27)
 project(vgmdata C)
-message("-- RAYLIB_SRC=${RAYLIB_SRC}")
-message("-- RAYLIB_BIN=${RAYLIB_BIN}")
 
 include(FetchContent)
 
@@ -24,6 +22,25 @@ set(TOOL_NAME "\"raygui app\"")
 set(TOOL_VERSION "\"0.0.1\"")
 set(TOOL_DESCRIPTION "\"Sample raygui app\"")
 
+# Fetch raylib
+# Adding raylib
+FetchContent_Declare(
+    raylib
+    GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
+    GIT_TAG "master"
+    GIT_PROGRESS TRUE
+    GIT_SHALLOW TRUE
+    #CONFIGURE_COMMAND cmake -S . -B build
+    #BUILD_COMMAND make
+)
+FetchContent_MakeAvailable(raylib)
+
+# Find raylib.h
+#file(GLOB_RECURSE raylib_h ${raylib_SOURCE_DIR} raylib.h)
+#list(GET raylib_h 0 raylib_h)
+#get_filename_component(RAYLIB_SRC ${raylib_h} DIRECTORY)
+#message("-- Set RAYLIB_SRC to ${RAYLIB_SRC}")
+
 # Fetch raygui library
 FetchContent_Declare(
     raygui
@@ -31,14 +48,10 @@ FetchContent_Declare(
     GIT_TAG "master"
     GIT_PROGRESS TRUE
     GIT_SHALLOW TRUE
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
+    #CONFIGURE_COMMAND ""
+    #BUILD_COMMAND ""
 )
-FetchContent_GetProperties(raygui)
-if(NOT raygui_POPULATED)
-	#cmake_policy(SET CMP0169 OLD)
-	FetchContent_Populate(raygui)
-endif()
+FetchContent_MakeAvailable(raygui)
 
 # Get path to raygui.h
 file(GLOB_RECURSE raygui_h ${raygui_SOURCE_DIR} raygui.h)
@@ -48,7 +61,7 @@ message("-- raygui directory set to ${RAYGUI_SRC}")
 
 file(GLOB app_SRC "*.h" "*.c")
 add_executable(vgmdata ${app_SRC} external/tinyfiledialogs.c)
-target_include_directories(vgmdata PUBLIC . ${RAYLIB_SRC} ${RAYGUI_SRC} external)
+target_include_directories(vgmdata PUBLIC . ${RAYLIB_SRC} external)
 add_compile_definitions(TOOL_NAME=${TOOL_NAME})
 add_compile_definitions(TOOL_VERSION=${TOOL_VERSION})
 add_compile_definitions(TOOL_DESCRIPTION=${TOOL_DESCRIPTION})
@@ -67,9 +80,10 @@ if(PLATFORM STREQUAL "Web")
     add_compile_definitions(_DEFAULT_SOURCE)
     target_compile_options(vgmdata PUBLIC -Wall -std=c99 -Wno-missing-braces -Wno-unused-value -Wno-pointer-sign)
     target_link_options(vgmdata PUBLIC
-        -L. -L${RAYLIB_BIN} -sUSE_GLFW=3 -sTOTAL_MEMORY=128MB -sSTACK_SIZE=1MB -sFORCE_FILESYSTEM=1 -sASYNCIFY
-        -sASYNCIFY_STACK_SIZE=1048576 -sASSERTIONS=1 --profiling --shell-file ${HTML_SHELL}
-        ${RAYLIB_BIN}/libraylib.a)
+        -sUSE_GLFW=3 -sTOTAL_MEMORY=128MB -sSTACK_SIZE=1MB -sFORCE_FILESYSTEM=1 -sASYNCIFY
+        -sASYNCIFY_STACK_SIZE=1048576 -sASSERTIONS=1 --profiling --shell-file ${HTML_SHELL})
+    target_link_libraries(vgmdata PUBLIC raylib)
+    #libraylib.a)
 elseif(PLATFORM STREQUAL "Desktop")
     message("-- Configuring for Desktop platform...")
     # Desktop-specific configurations

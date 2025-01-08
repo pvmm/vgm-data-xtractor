@@ -220,13 +220,6 @@ void mayble_block_gui(void)
 	}
 }
 
-
-
-void load_file(char* filename)
-{
-	printf("function load_file(%s) called\n", get_file_name(filename));
-}
-
 void disable_gui_if(bool cond)
 {
 	// lock only once because setting alpha again will make things invisible.

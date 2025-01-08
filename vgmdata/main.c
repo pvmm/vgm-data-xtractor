@@ -11,6 +11,7 @@
 #undef RAYGUI_IMPLEMENTATION                // Avoid including raygui implementation again
 
 #include "functions.h"
+//#include "vgmreader.h"
 
 #define ALLOWED_FILE_EXT    ".txt"
 
@@ -61,7 +62,7 @@ int main()
 			{
 				for (int i = 0; i < files.count; ++i)
 				{
-					load_file(files.paths[0]);
+					//load_file(files.paths[0]);
 				}
 				//SetWindowTitle(TextFormat("%s v%s | File: %s", tool_name, tool_version, GetFileName(in_filename)));
 #ifdef CUSTOM_MODAL_DIALOGS

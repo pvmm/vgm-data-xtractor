@@ -10,7 +10,7 @@ function(configure_target)
 	endif()
 endfunction()
 
-# Configure and build project
+# Configure and build projects
 function(build_target)
 	configure_target(${ARGV0})
 	execute_process(COMMAND make
@@ -38,24 +38,9 @@ function(build_emcc_target)
 		COMMAND_ERROR_IS_FATAL ANY)
 endfunction()
 
-function(config_clang_target)
-	if(${ARGC} EQUAL 0)
-		message(FATAL_ERROR "missing argument: target name")
-	endif()
-	message("CLANG compiler is ${CLANG_EXE}")
-	# Remove first parameter and call it TARGET
-	set(TARGET "${ARGV0}")
-	list(REMOVE_AT ARGV 0)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_C_COMPILER=${CLANG_EXE} ${ARGV} -B build -S . --trace
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}"
-		COMMAND_ERROR_IS_FATAL ANY)
-	if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/build)
-		message(FATAL_ERROR "directory ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/build not found")
-	endif()
-endfunction()
-
+#
 # Configure and build project
+#
 
 # Install emsdk and update EMROOT and PATH
 build_target(emsdk)
@@ -88,14 +73,5 @@ endif()
 # check if emcc works
 execute_process(COMMAND emcc --version OUTPUT_QUIET COMMAND_ERROR_IS_FATAL ANY)
 
-# Configure and build raylib
-build_emcc_target(raylib -DCMAKE_BUILD_TYPE=DEBUG)
-
-# Get raylib options back
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/raylib/build/RAYLIB_SRC.txt" RAYLIB_SRC)
-set(ENV{INCLUDE_DIRECTORIES} ${RAYLIB_SRC})
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/raylib/build/RAYLIB_BIN.txt" RAYLIB_BIN)
-set(ENV{INCLUDE_DIRECTORIES} ${RAYLIB_BIN})
-
 # Configure vgmdata project with Emscripten
-build_emcc_target(vgmdata -DRAYLIB_SRC=${RAYLIB_SRC} -DRAYLIB_BIN=${RAYLIB_BIN})
+build_emcc_target(vgmdata -DCMAKE_BUILD_TYPE=DEBUG)
