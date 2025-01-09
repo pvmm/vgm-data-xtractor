@@ -8,6 +8,7 @@
 
 #include "functions.h"
 
+#include <string.h>
 #define GUI_FILE_DIALOGS_IMPLEMENTATION
 #include "gui_file_dialogs.h"               // GUI: File Dialogs
 
@@ -21,6 +22,12 @@
 static enum priority priority = P_DEFAULT;
 static char *error_messages[MAX_ERRORS] = { NULL };
 static int error_index = -1;
+
+#if defined(PLATFORM_DESKTOP)
+static FilePathList _files = { 0 };
+static char _filename[512] = { 0 };
+static char* _paths[1]     = { NULL };
+#endif
 
 void process_errors(void)
 {
@@ -169,7 +176,11 @@ int show_load_dialog(const char* title, const char* extension, FilePathList* fil
 #else
 	char filters[10];
 	snprintf(filters, 10, "*%s", extension);
-	int result = GuiFileDialog(DIALOG_OPEN_FILE, title, filename, filters, message);
+	int result = GuiFileDialog(DIALOG_OPEN_FILE, title, filename, filters, "VGM files (*.vgm)");
+	_files.paths = _paths;
+	_files.paths[0] = _filename;
+	_files.count = 1;
+	*files = _files;
 #endif
 	// reset status after modal
 	if (result >= 0) reset_gui_lock(P_FILE_DIALOG);
@@ -234,5 +245,7 @@ void disable_gui_if(bool cond)
 
 void unload_dropped_files(void)
 {
+#if defined(PLATFORM_WEB)
 	UnloadDroppedFiles(LoadDroppedFiles());
+#endif
 }
