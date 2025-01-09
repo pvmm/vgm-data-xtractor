@@ -2,17 +2,19 @@ cmake_minimum_required(VERSION 3.15)
 project(BaseProject)
 
 function(configure_target)
-	execute_process(COMMAND cmake -B build -S .
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}"
+	set(TARGET "${ARGV0}")
+	list(REMOVE_AT ARGV 0)
+	execute_process(COMMAND cmake -B build -S . ${ARGV}
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}"
 		COMMAND_ERROR_IS_FATAL ANY)
 	if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}/build)
-		message(FATAL_ERROR "directory ${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}/build not found")
+		message(FATAL_ERROR "directory ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/build not found")
 	endif()
 endfunction()
 
 # Configure and build projects
 function(build_target)
-	configure_target(${ARGV0})
+	configure_target(${ARGV})
 	execute_process(COMMAND make
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}/build"
 		COMMAND_ERROR_IS_FATAL ANY)
@@ -42,15 +44,26 @@ endfunction()
 # Configure and build project
 #
 
-# Install emsdk and update EMROOT and PATH
-build_target(emsdk)
-set(ENV{EMROOT} ${CMAKE_CURRENT_SOURCE_DIR}/emsdk/build/emsdk/src/emsdk/upstream/emscripten)
-set(ENV{PATH} "$ENV{PATH}:$ENV{EMROOT}")
-set(CMAKE_PROGRAM_PATH $ENV{EMROOT})
-message("-- Added $ENV{EMROOT} to PATH")
+if(PLATFORM STREQUAL Web)
+	set(USE_EMCC ON)
+endif()
 
-# Define clang executables
-if(DEFINED USE_CLANG)
+if(DEFINED USE_EMCC)
+	# Install emsdk and update EMROOT and PATH
+	build_target(emsdk)
+	set(ENV{EMROOT} ${CMAKE_CURRENT_SOURCE_DIR}/emsdk/build/emsdk/src/emsdk/upstream/emscripten)
+	set(ENV{PATH} "$ENV{PATH}:$ENV{EMROOT}")
+	set(CMAKE_PROGRAM_PATH $ENV{EMROOT})
+	message("-- Added $ENV{EMROOT} to PATH")
+
+	# check if emcc works
+	execute_process(COMMAND emcc --version OUTPUT_QUIET COMMAND_ERROR_IS_FATAL ANY)
+
+	# Configure vgmdata project with Emscripten
+	build_emcc_target(vgmdata
+		-DPLATFORM=${PLATFORM}
+		-DCMAKE_BUILD_TYPE=DEBUG)
+else()
 	find_program(WASM-LD_EXE NAMES wasm-ld HINTS $ENV{EMROOT}/../bin REQUIRED)
 	if(WASM-LD_EXE STREQUAL "WASM-LD_EXE-NOTFOUND")
 		message(FATAL_ERROR "wasm-ld linker not found")
@@ -66,10 +79,9 @@ if(DEFINED USE_CLANG)
 	message("-- Checking if clang works... ${CLANG_EXE}")
 	execute_process(COMMAND ${CLANG_EXE} --version OUTPUT_QUIET COMMAND_ERROR_IS_FATAL ANY)
 	message("-- Found clang executable at ${CLANG_EXE}")
+
+	# Configure vgmdata project with Emscripten
+	build_target(vgmdata
+		-DPLATFORM=${PLATFORM}
+		-DCMAKE_BUILD_TYPE=DEBUG)
 endif()
-
-# check if emcc works
-execute_process(COMMAND emcc --version OUTPUT_QUIET COMMAND_ERROR_IS_FATAL ANY)
-
-# Configure vgmdata project with Emscripten
-build_emcc_target(vgmdata -DCMAKE_BUILD_TYPE=DEBUG)
