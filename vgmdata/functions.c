@@ -147,9 +147,8 @@ int show_load_dialog(const char* title, const char* extension, FilePathList* fil
 	disable_gui_if(gui_status_not(P_FILE_DIALOG) && gui_status_not(P_DEFAULT));
 	set_gui_lock(P_FILE_DIALOG);
 
-	char filename[512] = { 0 };
 #if defined(CUSTOM_MODAL_DIALOGS) 
-	int result = GuiFileDialog(DIALOG_MESSAGE, title, filename, "OK", "Just drag and drop your file!");
+	int result = GuiFileDialog(DIALOG_MESSAGE, title, _filename, "OK", "Just drag and drop your file!");
 	// process wrong file input
 	if (IsFileDropped())
 	{
@@ -176,11 +175,13 @@ int show_load_dialog(const char* title, const char* extension, FilePathList* fil
 #else
 	char filters[10];
 	snprintf(filters, 10, "*%s", extension);
-	int result = GuiFileDialog(DIALOG_OPEN_FILE, title, filename, filters, "VGM files (*.vgm)");
-	_files.paths = _paths;
-	_files.paths[0] = _filename;
-	_files.count = 1;
-	*files = _files;
+	int result = GuiFileDialog(DIALOG_OPEN_FILE, title, _filename, filters, "VGM files (*.vgm)");
+	if (result > 0) {
+		_files.paths = _paths;
+		_files.paths[0] = _filename;
+		_files.count = 1;
+		*files = _files;
+	}
 #endif
 	// reset status after modal
 	if (result >= 0) reset_gui_lock(P_FILE_DIALOG);

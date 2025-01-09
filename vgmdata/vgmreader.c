@@ -18,7 +18,7 @@ int load_file(const char *filename) {
     printf("load_file() called\n");
     FILE *file = fopen(filename, "rb");
     if (!file) {
-        printf("Error opening file: %s\n", filename);
+        printf("Error opening file \"%s\"\n", filename);
         return -1;
     }
 
