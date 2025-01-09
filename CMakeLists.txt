@@ -1,14 +1,17 @@
 cmake_minimum_required(VERSION 3.15)
 project(BaseProject)
 
+# get build directory name
+get_filename_component(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR} NAME)
+
 function(configure_target)
 	set(TARGET "${ARGV0}")
 	list(REMOVE_AT ARGV 0)
-	execute_process(COMMAND cmake -B build -S . ${ARGV}
+	execute_process(COMMAND cmake -B ${BIN_DIR} -S . ${ARGV}
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}"
 		COMMAND_ERROR_IS_FATAL ANY)
-	if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}/build)
-		message(FATAL_ERROR "directory ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/build not found")
+	if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}/${BIN_DIR})
+		message(FATAL_ERROR "directory ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/${BIN_DIR} not found")
 	endif()
 endfunction()
 
@@ -16,7 +19,7 @@ endfunction()
 function(build_target)
 	configure_target(${ARGV})
 	execute_process(COMMAND make
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}/build"
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}/${BIN_DIR}"
 		COMMAND_ERROR_IS_FATAL ANY)
 endfunction()
 
@@ -29,14 +32,14 @@ function(build_emcc_target)
 	set(TARGET "${ARGV0}")
 	list(REMOVE_AT ARGV 0)
 	execute_process(
-		COMMAND ${CMAKE_COMMAND} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_TOOLCHAIN_FILE=$ENV{EMROOT}/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_C_COMPILER=emcc ${ARGV} -B build -S .
+		COMMAND ${CMAKE_COMMAND} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_TOOLCHAIN_FILE=$ENV{EMROOT}/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_C_COMPILER=emcc ${ARGV} -B ${BIN_DIR} -S .
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}"
 		COMMAND_ERROR_IS_FATAL ANY)
-	if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/build)
-		message(FATAL_ERROR "directory ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/build not found")
+	if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/${BIN_DIR})
+		message(FATAL_ERROR "directory ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/${BIN_DIR} not found")
 	endif()
 	execute_process(COMMAND make
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/build"
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/${BIN_DIR}"
 		COMMAND_ERROR_IS_FATAL ANY)
 endfunction()
 
@@ -51,7 +54,7 @@ endif()
 if(DEFINED USE_EMCC)
 	# Install emsdk and update EMROOT and PATH
 	build_target(emsdk)
-	set(ENV{EMROOT} ${CMAKE_CURRENT_SOURCE_DIR}/emsdk/build/emsdk/src/emsdk/upstream/emscripten)
+	set(ENV{EMROOT} ${CMAKE_CURRENT_SOURCE_DIR}/emsdk/${BIN_DIR}/emsdk/src/emsdk/upstream/emscripten)
 	set(ENV{PATH} "$ENV{PATH}:$ENV{EMROOT}")
 	set(CMAKE_PROGRAM_PATH $ENV{EMROOT})
 	message("-- Added $ENV{EMROOT} to PATH")
