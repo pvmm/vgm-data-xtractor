@@ -34,6 +34,7 @@ size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* b
             if (ptr + size <= end) {  // Ensure size is valid
                 blocks[block_count].type = type;
                 blocks[block_count].size = size;
+                printf("block size: %u\n", size);
                 blocks[block_count].data = (uint8_t *)malloc(size);
                 if (!blocks[block_count].data) {
                     perror("Memory allocation error");
@@ -54,6 +55,7 @@ size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* b
         }
     }
 
+    printf("%zu data blocks found.\n", block_count);
     return block_count;
 }
 
