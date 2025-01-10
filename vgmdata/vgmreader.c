@@ -3,10 +3,18 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "raylib.h"
+#include "raygui.h"
+
+#if defined(PLATFORM_WEB)
+    #define CUSTOM_MODAL_DIALOGS            // Force custom modal dialogs usage
+    #include <emscripten/emscripten.h>      // Emscripten library - LLVM to JavaScript compiler
+#endif
+
 #define VGM_HEADER_SIZE 0x40
 #define VGM_EOF_OFFSET  0x04
 #define VGM_DATA_OFFSET 0x34
-#define MAX_BLOCK_COUNT 10000
+#define MAX_BLOCK_COUNT 1000
 
 // Structure to hold data block information
 typedef struct {
@@ -14,6 +22,32 @@ typedef struct {
     uint32_t size;
     uint8_t *data;
 } VGMDataBlock;
+
+size_t save_block(int count, uint8_t* file_data, size_t size)
+{
+    char filename[100];
+    snprintf(filename, 100, "block_%i.raw", count);
+
+    FILE* file = fopen(filename, "wb");
+    if (!file) {
+        printf("Error opening file \"%s\"\n", filename);
+        return 0;
+    }
+
+    if (fwrite(file_data, 1, size, file) != size) {
+        printf("Error writing raw sample: out of space?\n");
+        fclose(file);
+        return -1;
+    }
+
+    fclose(file);
+    printf("File saved to %s\n", filename);
+#if defined(PLATFORM_WEB)
+// Download file from MEMFS (emscripten memory filesystem)
+// NOTE: Second argument must be a simple filename (we can't use directories)
+    emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", filename, GetFileName(filename)));
+#endif
+}
 
 size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* blocks)
 {
@@ -24,24 +58,31 @@ size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* b
 
     // Search for 0x67 command byte and extract data blocks
     while (ptr < end) {
-        if (*ptr == 0x67 && (ptr + 7 < end)) {  // Ensure there's enough space for a block header
-            // 0x67 command found, read type and size
-            uint8_t command = *ptr++;
-            uint8_t type = *ptr++;  // Data type
-            uint32_t size = *(uint32_t *)ptr;
+        if (*ptr == 0x67 && (ptr + 7 < end)) {
+            ptr++; // skip command
+            uint8_t type = *ptr++;  // data type
+            // compatibility mode detected, reading again.
+            if (type == 0x66) type = *ptr++;
+            uint32_t size = *(uint32_t *)ptr; // size
+            // ignore most significant bit
+            size &= 0x7fffffff;
             ptr += 4;
 
-            if (ptr + size <= end) {  // Ensure size is valid
+            if (ptr + size <= end) {
                 blocks[block_count].type = type;
-                blocks[block_count].size = size;
-                printf("block size: %u\n", size);
-                blocks[block_count].data = (uint8_t *)malloc(size);
-                if (!blocks[block_count].data) {
-                    perror("Memory allocation error");
-                    free(file_data);
-                    return 0;
+                printf("%zu block type: %x\n", block_count, blocks[block_count].type);
+                blocks[block_count].size = size - 8;
+                printf("%zu block size: %u\n", block_count, blocks[block_count].size);
+                if (blocks[block_count].size > 0) {
+                    blocks[block_count].data = (uint8_t *)malloc(size);
+                    if (!blocks[block_count].data) {
+                        perror("Memory allocation error");
+                        free(file_data);
+                        return 0;
+                    }
+                    memcpy(blocks[block_count].data, ptr, size);
+                    save_block(block_count, blocks[block_count].data, blocks[block_count].size);
                 }
-                memcpy(blocks[block_count].data, ptr, size);
 
                 block_count++;
                 if (block_count >= MAX_BLOCK_COUNT) {
@@ -49,7 +90,7 @@ size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* b
                     break;
                 }
             }
-            ptr += size;
+            ptr += size - 8;
         } else {
             ptr++;
         }
@@ -60,7 +101,8 @@ size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* b
 }
 
 // Function to extract sample data from a VGM file
-int load_file(const char *filename) {
+int load_file(const char *filename)
+{
     printf("load_file() called\n");
     FILE *file = fopen(filename, "rb");
     if (!file) {

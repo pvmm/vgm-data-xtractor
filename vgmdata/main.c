@@ -23,20 +23,13 @@ static const char* tool_version = TOOL_VERSION;
 static const char* tool_description = TOOL_DESCRIPTION;
 
 // NOTE: Max length depends on OS, in Windows MAX_PATH = 256
-static char in_filename[512] = { 0 };
-static char out_filename[512] = { 0 };
 bool save_changes_required = false;
 
 int main()
 {
-	// hide warnings since this is an incomplete example
-	(void)tool_description;
-	(void)out_filename;
-	(void)tool_name;
-	(void)tool_version;
-	(void)in_filename;
-
-	InitWindow(800, 600, "Raygui Sample App");
+	char title[100];
+	snprintf("%s: %s, %s", 100, tool_name, tool_description, tool_version);
+	InitWindow(800, 600, title);
 	SetTargetFPS(60);
 
 	int result;
