@@ -15,9 +15,9 @@ if(PLATFORM_INDEX EQUAL -1)
     message(FATAL_ERROR "Invalid PLATFORM: ${PLATFORM}. Supported values are: ${SUPPORTED_PLATFORMS}")
 endif()
 
-set(TOOL_NAME "\"raygui app\"")
+set(TOOL_NAME "\"vgmdata-x\"")
 set(TOOL_VERSION "\"0.0.1\"")
-set(TOOL_DESCRIPTION "\"Sample raygui app\"")
+set(TOOL_DESCRIPTION "\"VGM data extractor\"")
 
 # Fetch raylib
 FetchContent_Declare(
@@ -70,20 +70,20 @@ if(PLATFORM STREQUAL "Web")
     message("-- Installing web files...")
     add_custom_command(
         TARGET vgmdata POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-        ${CMAKE_CURRENT_BINARY_DIR}/web)
-    add_custom_command(
-        TARGET vgmdata POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/resources
-        ${CMAKE_CURRENT_BINARY_DIR}/web)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../docs)
+    add_custom_command(
+        TARGET vgmdata POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_BINARY_DIR}/vgmdata.js
+        ${CMAKE_CURRENT_BINARY_DIR}/vgmdata.wasm
+        ${CMAKE_CURRENT_SOURCE_DIR}/../docs)
     add_custom_command(
         TARGET vgmdata POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_BINARY_DIR}/vgmdata.html
-        ${CMAKE_CURRENT_BINARY_DIR}/vgmdata.js
-        ${CMAKE_CURRENT_BINARY_DIR}/vgmdata.wasm
-        ${CMAKE_CURRENT_BINARY_DIR}/web/)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../docs/index.html)
 elseif(PLATFORM STREQUAL "Desktop")
     message("-- Configuring for desktop platform...")
     add_compile_definitions(PLATFORM_DESKTOP)
