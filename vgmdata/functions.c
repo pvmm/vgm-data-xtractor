@@ -23,9 +23,9 @@ static enum priority priority = P_DEFAULT;
 static char *error_messages[MAX_ERRORS] = { NULL };
 static int error_index = -1;
 
+static char _filename[512] = { 0 };
 #if defined(PLATFORM_DESKTOP)
 static FilePathList _files = { 0 };
-static char _filename[512] = { 0 };
 static char* _paths[1]     = { NULL };
 #endif
 

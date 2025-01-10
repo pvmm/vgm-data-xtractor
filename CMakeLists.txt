@@ -7,7 +7,7 @@ get_filename_component(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR} NAME)
 function(configure_target)
 	set(TARGET "${ARGV0}")
 	list(REMOVE_AT ARGV 0)
-	execute_process(COMMAND cmake -B ${BIN_DIR} -S . ${ARGV}
+	execute_process(COMMAND ${CMAKE_COMMAND} -B ${BIN_DIR} -S . ${ARGV}
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}"
 		COMMAND_ERROR_IS_FATAL ANY)
 	if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}/${BIN_DIR})
@@ -18,8 +18,8 @@ endfunction()
 # Configure and build projects
 function(build_target)
 	configure_target(${ARGV})
-	execute_process(COMMAND make
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}/${BIN_DIR}"
+	execute_process(COMMAND ${CMAKE_COMMAND} --build ${BIN_DIR}
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}"
 		COMMAND_ERROR_IS_FATAL ANY)
 endfunction()
 
@@ -38,8 +38,8 @@ function(build_emcc_target)
 	if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/${BIN_DIR})
 		message(FATAL_ERROR "directory ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/${BIN_DIR} not found")
 	endif()
-	execute_process(COMMAND make
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/${BIN_DIR}"
+	execute_process(COMMAND ${CMAKE_COMMAND} --build ${BIN_DIR}
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}"
 		COMMAND_ERROR_IS_FATAL ANY)
 endfunction()
 
