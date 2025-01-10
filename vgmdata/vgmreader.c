@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #define VGM_HEADER_SIZE 0x40
-#define VGM_EOF_OFFSET 0x04
+#define VGM_EOF_OFFSET  0x04
 #define VGM_DATA_OFFSET 0x34
+#define MAX_BLOCK_COUNT 10000
 
 // Structure to hold data block information
 typedef struct {
@@ -12,6 +14,48 @@ typedef struct {
     uint32_t size;
     uint8_t *data;
 } VGMDataBlock;
+
+size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* blocks)
+{
+    size_t block_count = 0;
+    uint8_t *ptr = file_data;
+    uint8_t *end = file_data + data_size;
+    free(file_data);
+
+    // Search for 0x67 command byte and extract data blocks
+    while (ptr < end) {
+        if (*ptr == 0x67 && (ptr + 7 < end)) {  // Ensure there's enough space for a block header
+            // 0x67 command found, read type and size
+            uint8_t command = *ptr++;
+            uint8_t type = *ptr++;  // Data type
+            uint32_t size = *(uint32_t *)ptr;
+            ptr += 4;
+
+            if (ptr + size <= end) {  // Ensure size is valid
+                blocks[block_count].type = type;
+                blocks[block_count].size = size;
+                blocks[block_count].data = (uint8_t *)malloc(size);
+                if (!blocks[block_count].data) {
+                    perror("Memory allocation error");
+                    free(file_data);
+                    return 0;
+                }
+                memcpy(blocks[block_count].data, ptr, size);
+
+                block_count++;
+                if (block_count >= MAX_BLOCK_COUNT) {
+                    printf("reserved memory exhausted\n");
+                    break;
+                }
+            }
+            ptr += size;
+        } else {
+            ptr++;
+        }
+    }
+
+    return block_count;
+}
 
 // Function to extract sample data from a VGM file
 int load_file(const char *filename) {
@@ -54,12 +98,12 @@ int load_file(const char *filename) {
     }
 
     // Calculate the size of the data
-    uint32_t file_size = eof_offset + 4;
-    uint32_t file_data_size = file_size - data_offset;
-    printf("File data extracted (%u bytes)\n", file_data_size);
+    size_t file_size = eof_offset + 4;
+    size_t data_size = file_size - data_offset;
+    printf("File data extracted (%zu bytes)\n", data_size);
 
     // Allocate memory for all file commands
-    uint8_t *file_data = (uint8_t *)malloc(file_data_size);
+    uint8_t *file_data = (uint8_t *)malloc(data_size);
     if (!file_data) {
         perror("Memory allocation failed\n");
         fclose(file);
@@ -68,17 +112,14 @@ int load_file(const char *filename) {
 
     // Seek to the data offset and read the sample data
     fseek(file, data_offset, SEEK_SET);
-    if (fread(file_data, 1, file_data_size, file) != file_data_size) {
+    if (fread(file_data, 1, data_size, file) != data_size) {
         printf("Error reading sample data\n");
         free(file_data);
         fclose(file);
         return -1;
     }
 
-    size_t block_count = 0;
-    uint8_t *ptr = file_data;
-    uint8_t *end = file_data + file_size;
-    free(file_data);
-
-    return block_count;
+    fclose(file);
+    VGMDataBlock blocks[MAX_BLOCK_COUNT];
+    return extract_data_blocks(file_data, data_size, blocks);
 }
