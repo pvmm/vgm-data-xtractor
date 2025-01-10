@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
-project(BaseProject)
+project(scaffold)
+
+# real project name
+set(PROJECT vgm-data-xtractor)
 
 # get build directory name
 get_filename_component(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR} NAME)
@@ -62,8 +65,8 @@ if(DEFINED USE_EMCC)
 	# check if emcc works
 	execute_process(COMMAND emcc --version OUTPUT_QUIET COMMAND_ERROR_IS_FATAL ANY)
 
-	# Configure vgmdata project with Emscripten
-	build_emcc_target(vgmdata
+	# Configure project with Emscripten
+	build_emcc_target(${PROJECT}
 		-DPLATFORM=${PLATFORM}
 		-DCMAKE_BUILD_TYPE=DEBUG)
 else()
@@ -83,8 +86,8 @@ else()
 	execute_process(COMMAND ${CLANG_EXE} --version OUTPUT_QUIET COMMAND_ERROR_IS_FATAL ANY)
 	message("-- Found clang executable at ${CLANG_EXE}")
 
-	# Configure vgmdata project with Emscripten
-	build_target(vgmdata
+	# Configure project with Emscripten
+	build_target(${PROJECT}
 		-DPLATFORM=${PLATFORM}
 		-DCMAKE_BUILD_TYPE=DEBUG)
 endif()
