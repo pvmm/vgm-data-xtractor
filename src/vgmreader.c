@@ -18,11 +18,22 @@
 #define MAX_BLOCK_COUNT 1000
 
 // Structure to hold data block information
-typedef struct {
+struct VGMDataBlock {
     uint32_t type;
     uint32_t size;
     uint8_t *data;
-} VGMDataBlock;
+};
+
+static const char* type_descriptions[] = {
+    "uncompressed recorded streams",
+    "compressed recorded streams",
+    "decompression table",
+    "ROM/RAM image dumps",
+    "RAM writes (<= 64 KB)",
+    "RAM writes (> 64 KB)",
+};
+
+static struct VGMDataBlock blocks[MAX_BLOCK_COUNT];
 
 // Dropdown options
 static bool changed = false;
@@ -47,8 +58,22 @@ char* get_data_blocks(void)
 	snprintf(block_options, 1000, "#113#no block");
         for (int i = 0; i < data_blocks; ++i)
         {
+            const char* desc;
             strcat(block_options, ";#06#");
-            snprintf(filename, 50, "block_%i.raw", i);
+	    if (blocks[i].type <= 0x3f)
+                desc = type_descriptions[0];
+	    else if (blocks[i].type <= 0x7e)
+                desc = type_descriptions[1];
+	    else if (blocks[i].type == 0x7f)
+                desc = type_descriptions[2];
+	    else if (blocks[i].type <= 0xbf)
+                desc = type_descriptions[3];
+	    else if (blocks[i].type <= 0xdf)
+                desc = type_descriptions[4];
+	    else {
+                desc = type_descriptions[5];
+	    }
+            snprintf(filename, 50, "block_%i.raw: %s", i, desc);
             strcat(block_options, filename);
         }
 	changed = false;
@@ -80,7 +105,7 @@ bool save_block(int count, uint8_t* file_data, size_t size)
     return true;
 }
 
-size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* blocks)
+size_t extract_data_blocks(uint8_t* file_data, size_t data_size)
 {
     size_t block_count = 0;
     uint8_t *ptr = file_data;
@@ -205,8 +230,7 @@ bool load_file(const char *filename)
     }
     fclose(file);
 
-    VGMDataBlock blocks[MAX_BLOCK_COUNT];
-    data_blocks = extract_data_blocks(file_data, data_size, blocks);
+    data_blocks = extract_data_blocks(file_data, data_size);
     if (data_blocks) changed = true;
     return data_blocks >= 0;
 }
