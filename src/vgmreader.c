@@ -109,7 +109,7 @@ char* get_data_blocks(void)
         for (int i = 0; i < data_blocks; ++i)
         {
             const char* desc;
-            const char* chip = chip_type[blocks[i].type];
+            const char* chip = chip_type[blocks[i].type] ? chip_type[blocks[i].type] : "???";
             if (blocks[i].type <= 0x3f)
                 desc = type_descriptions[0];
             else if (blocks[i].type <= 0x7e)
