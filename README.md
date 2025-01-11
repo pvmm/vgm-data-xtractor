@@ -1,6 +1,6 @@
 # VGM-data-xtractor
 
-Extract data blocks from vgm files.
+Extract data blocks from [vgm](https://vgmrips.net/packs/) files.
 
 # Compiling
 
