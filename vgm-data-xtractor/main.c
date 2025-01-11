@@ -36,9 +36,13 @@ int main()
 	FilePathList files;
 	bool request_load_dialog = false;
 	bool request_about_box = false;
+	int cb_index = 0;
+	bool cb_edit_mode = false;
 
 	while (!WindowShouldClose())
 	{
+		//if (delayed()) continue;
+
 		BeginDrawing();
 		ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
@@ -70,6 +74,17 @@ int main()
 		if (request_about_box && show_about_box() >= 0)
 		{
 			request_about_box = false;
+		}
+
+		// Dropdown at last
+		if (show_drop_down((Rectangle){ 200, 24, 120, 30 }, get_data_blocks(), &cb_index, cb_edit_mode))
+		{
+			if (cb_edit_mode && cb_index > 0)
+			{
+				printf("selected!\n");
+				download_block(cb_index - 1);
+			}
+			cb_edit_mode = !cb_edit_mode;
 		}
 
 		EndDrawing();

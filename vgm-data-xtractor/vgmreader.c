@@ -23,7 +23,41 @@ typedef struct {
     uint8_t *data;
 } VGMDataBlock;
 
-size_t save_block(int count, uint8_t* file_data, size_t size)
+// Dropdown options
+static bool changed = false;
+static int data_blocks = 0;
+static char block_options[1000] = "#06#no blocks";
+
+void download_block(int i)
+{
+#if defined(PLATFORM_WEB)
+// Download file from MEMFS (emscripten memory filesystem)
+// NOTE: Second argument must be a simple filename (we can't use directories)
+    char filename[50];
+    snprintf(filename, 50, "block_%i.raw", i);
+    emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", filename, GetFileName(filename)));
+#endif
+}
+
+char* get_data_blocks(void)
+{
+    if (changed)
+    {
+        char filename[50];
+	snprintf(block_options, 1000, "#06#no blocks");
+        for (int i = 0; i < data_blocks; ++i)
+        {
+            strcat(block_options, ";#06#");
+            snprintf(filename, 50, "block_%i.raw", i);
+            strcat(block_options, filename);
+        }
+	changed = false;
+    }
+
+    return block_options;
+}
+
+bool save_block(int count, uint8_t* file_data, size_t size)
 {
     char filename[100];
     snprintf(filename, 100, "block_%i.raw", count);
@@ -31,22 +65,19 @@ size_t save_block(int count, uint8_t* file_data, size_t size)
     FILE* file = fopen(filename, "wb");
     if (!file) {
         printf("Error opening file \"%s\"\n", filename);
-        return 0;
+        return false;
     }
 
     if (fwrite(file_data, 1, size, file) != size) {
         printf("Error writing raw sample: out of space?\n");
         fclose(file);
-        return -1;
+        return false;
     }
 
     fclose(file);
     printf("File saved to %s\n", filename);
-#if defined(PLATFORM_WEB)
-// Download file from MEMFS (emscripten memory filesystem)
-// NOTE: Second argument must be a simple filename (we can't use directories)
-    emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", filename, GetFileName(filename)));
-#endif
+
+    return true;
 }
 
 size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* blocks)
@@ -57,8 +88,10 @@ size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* b
     free(file_data);
 
     // Search for 0x67 command byte and extract data blocks
-    while (ptr < end) {
-        if (*ptr == 0x67 && (ptr + 7 < end)) {
+    while (ptr < end)
+    {
+        if (*ptr == 0x67 && (ptr + 7 < end))
+        {
             ptr++; // skip command
             uint8_t type = *ptr++;  // data type
             // compatibility mode detected, reading again.
@@ -68,42 +101,51 @@ size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* b
             size &= 0x7fffffff;
             ptr += 4;
 
-            if (ptr + size <= end) {
+            if (ptr + size <= end)
+            {
                 blocks[block_count].type = type;
-                printf("%zu block type: %x\n", block_count, blocks[block_count].type);
+                //printf("%zu block type: %x\n", block_count, blocks[block_count].type);
                 blocks[block_count].size = size - 8;
-                printf("%zu block size: %u\n", block_count, blocks[block_count].size);
-                if (blocks[block_count].size > 0) {
+                //printf("%zu block size: %u\n", block_count, blocks[block_count].size);
+                if (blocks[block_count].size > 0)
+                {
                     blocks[block_count].data = (uint8_t *)malloc(size);
-                    if (!blocks[block_count].data) {
+                    if (!blocks[block_count].data)
+                    {
                         perror("Memory allocation error");
                         free(file_data);
                         return 0;
                     }
                     memcpy(blocks[block_count].data, ptr, size);
-                    save_block(block_count, blocks[block_count].data, blocks[block_count].size);
+                    if (!save_block(block_count, blocks[block_count].data, blocks[block_count].size))
+                    {
+                        return 0;
+                    }
+
+                    block_count++;
                 }
 
-                block_count++;
-                if (block_count >= MAX_BLOCK_COUNT) {
+                if (block_count >= MAX_BLOCK_COUNT)
+                {
                     printf("reserved memory exhausted\n");
                     break;
                 }
             }
             ptr += size - 8;
-        } else {
+        }
+        else
+        {
             ptr++;
         }
     }
 
-    printf("%zu data blocks found.\n", block_count);
+    //printf("%zu data blocks found.\n", block_count);
     return block_count;
 }
 
 // Function to extract sample data from a VGM file
-int load_file(const char *filename)
+bool load_file(const char *filename)
 {
-    printf("load_file() called\n");
     FILE *file = fopen(filename, "rb");
     if (!file) {
         printf("Error opening file \"%s\"\n", filename);
@@ -162,8 +204,10 @@ int load_file(const char *filename)
         fclose(file);
         return -1;
     }
-
     fclose(file);
+
     VGMDataBlock blocks[MAX_BLOCK_COUNT];
-    return extract_data_blocks(file_data, data_size, blocks);
+    data_blocks = extract_data_blocks(file_data, data_size, blocks);
+    if (data_blocks) changed = true;
+    return data_blocks >= 0;
 }

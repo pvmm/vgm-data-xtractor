@@ -17,6 +17,8 @@ int show_message(char* title, char* message);
 
 int show_load_dialog(const char* title, const char* extension, FilePathList* files);
 
+int show_drop_down(Rectangle bounds, char* options, int* index, bool status);
+
 //
 // priority handling
 //
@@ -24,10 +26,14 @@ int show_load_dialog(const char* title, const char* extension, FilePathList* fil
 enum priority
 {
         P_DEFAULT     = 0,
-        P_MSG_DIALOG  = 1,
-        P_FILE_DIALOG = 2,
-        P_ERR_DIALOG  = 4,
+	P_DROP_DOWN   = 1,
+        P_MSG_DIALOG  = 2,
+        P_FILE_DIALOG = 4,
+        P_ERR_DIALOG  = 8,
+	P_ALL         = 15,
 };
+
+void enable_gui(void);
 
 void disable_gui_if(bool cond);
 
@@ -46,6 +52,8 @@ bool gui_status_not(enum priority p);
 //
 
 int show_error(char* message);
+
+bool delayed(void);
 
 void process_errors(void);
 

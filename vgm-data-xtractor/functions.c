@@ -19,6 +19,7 @@
 #define MAX_ERRORS 5
 
 // control status
+static int timeout = 0;
 static enum priority priority = P_DEFAULT;
 static char *error_messages[MAX_ERRORS] = { NULL };
 static int error_index = -1;
@@ -28,6 +29,13 @@ static char _filename[512] = { 0 };
 static FilePathList _files = { 0 };
 static char* _paths[1]     = { NULL };
 #endif
+
+bool delayed(void)
+{
+	if (timeout > 0) return timeout-- ? true : false;
+	//else reset_gui_lock(P_ALL);
+	return false;
+}
 
 void process_errors(void)
 {
@@ -84,7 +92,7 @@ int show_about_box()
 		append_error_message("Unexpected file dragging. Click on the \"Open File...\" button first.");
 		UnloadDroppedFiles(LoadDroppedFiles());
 	} else {
-		disable_gui_if(false);
+		enable_gui();
 		set_gui_lock(P_MSG_DIALOG);
 		result = GuiMessageBox(
 			(Rectangle){ GetScreenWidth() / 2 - 200, GetScreenHeight() / 2 - 180, 400, 180 },
@@ -103,7 +111,7 @@ int show_button(Rectangle bounds, const char *text)
 int show_error(char* message)
 {
 	set_gui_lock(P_ERR_DIALOG);
-	disable_gui_if(false); // error dialog has maximum priority
+	enable_gui(); // error dialog has maximum priority
 	int result = GuiMessageBox(
 		(Rectangle){ GetScreenWidth() / 2 - 200, GetScreenHeight() / 2 - 180, 400, 180 },
 		"Error", message, "OK");
@@ -188,6 +196,13 @@ int show_load_dialog(const char* title, const char* extension, FilePathList* fil
 	return result;
 }
 
+int show_drop_down(Rectangle bounds, char* options, int* index, bool status)
+{
+	disable_gui_if(gui_status_not(P_DEFAULT) && gui_status_not(P_DROP_DOWN));
+	int result = GuiDropdownBox(bounds, options, index, status);
+	return result;
+}
+
 char* get_file_name(char* path)
 {
 	char *s;
@@ -221,7 +236,7 @@ void reset_gui_lock(enum priority p)
 	priority &= ~p;
 }
 
-void mayble_block_gui(void)
+void maybe_block_gui(void)
 {
 	if (priority > P_DEFAULT && !GuiIsLocked()) {
 		GuiLock();
@@ -230,6 +245,12 @@ void mayble_block_gui(void)
 		GuiUnlock();
 		GuiSetAlpha(1.0f);
 	}
+}
+
+void enable_gui(void)
+{
+	GuiUnlock();
+	GuiSetAlpha(1.0f);
 }
 
 void disable_gui_if(bool cond)
