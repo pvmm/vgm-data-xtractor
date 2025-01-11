@@ -24,6 +24,7 @@ struct VGMDataBlock {
     uint32_t size;
     uint8_t *data;
 };
+size_t block_count = 0;
 
 static const char* type_descriptions[] = {
     "uncompressed streams",
@@ -158,9 +159,9 @@ bool save_block(int count, uint8_t* file_data, size_t size)
 
 size_t extract_data_blocks(uint32_t data_offset, uint8_t* file_data, size_t data_size)
 {
-    size_t block_count = 0;
     uint8_t *ptr = file_data;
     const uint8_t *end = file_data + data_size;
+    size_t last_count = block_count;
 
     // Search for 0x67 command byte and extract data blocks
     while (ptr < end)
@@ -169,7 +170,7 @@ size_t extract_data_blocks(uint32_t data_offset, uint8_t* file_data, size_t data
         if (*ptr == 0x67 && (*(ptr + 1) == 0x66) && (ptr + 7 < end))
         {
             //printf("%zu: data block found at: %lx\n", block_count, data_offset + ptr - file_data);
-	    ptr += 2; // skip command bytes (67 66)
+            ptr += 2; // skip command bytes (67 66)
             uint8_t type = *ptr++;  // data type
             uint32_t size = *(uint32_t *)ptr; // size
             // ignore most significant bit
@@ -186,13 +187,14 @@ size_t extract_data_blocks(uint32_t data_offset, uint8_t* file_data, size_t data
                     blocks[block_count].data = (uint8_t *)malloc(size);
                     if (!blocks[block_count].data)
                     {
-                        perror("Memory allocation error");
+                        append_error_message("Memory allocation error");
                         free(file_data);
                         return 0;
                     }
                     memcpy(blocks[block_count].data, ptr, size);
                     if (!save_block(block_count, blocks[block_count].data, blocks[block_count].size))
                     {
+                        append_error_message("Error writing \"block_%i.raw\".\n", block_count);
                         return 0;
                     }
 
@@ -214,7 +216,7 @@ size_t extract_data_blocks(uint32_t data_offset, uint8_t* file_data, size_t data
     }
 
     free(file_data);
-    return block_count;
+    return block_count - last_count;
 }
 
 bool check_header(const uint8_t* header)
@@ -250,7 +252,7 @@ uint32_t get_eof_offset(const uint8_t* header)
     return eof_offset;
 }
 
-bool _load_gzfile(const char* filename)
+bool load_gzfile(const char* filename, bool append)
 {
     gzFile file = gzopen(filename, "rb");
     if (!file) {
@@ -307,12 +309,14 @@ bool _load_gzfile(const char* filename)
 
     gzclose(file);
 
-    data_blocks = extract_data_blocks(data_offset, file_data, data_size);
-    if (data_blocks) changed = true;
-    return data_blocks >= 0;
+    size_t result = extract_data_blocks(data_offset, file_data, data_size);
+    if (result) changed = true;
+    data_blocks = append ? data_blocks + result : result;
+
+    return result >= 0;
 }
 
-bool _load_file(const char* filename)
+bool load_file(const char* filename, bool append)
 {
     FILE* file = fopen(filename, "rb");
     if (!file) {
@@ -368,12 +372,23 @@ bool _load_file(const char* filename)
 
     fclose(file);
 
-    data_blocks = extract_data_blocks(data_offset, file_data, data_size);
-    if (data_blocks) changed = true;
-    return data_blocks >= 0;
+    size_t result = extract_data_blocks(data_offset, file_data, data_size);
+    if (result) changed = true;
+    data_blocks = append ? data_blocks + result : result;
+
+    return result >= 0;
 }
 
-bool load_file(const char* filename)
+bool load_files(FilePathList* files)
 {
-    return IsFileExtension(filename, ".vgz") ? _load_gzfile(filename) : _load_file(filename);
+    block_count = 0;
+    bool result = false;
+
+    for (int i = 0; i < files->count; ++i)
+    {
+        result |= IsFileExtension(files->paths[i], ".vgz") ?
+            load_gzfile(files->paths[i], true) : load_file(files->paths[i], true);
+    }
+
+    return result;
 }

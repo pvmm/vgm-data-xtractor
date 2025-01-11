@@ -57,11 +57,10 @@ int main()
 		{
 			if (result > 0)
 			{
-				for (int i = 0; i < files.count; ++i)
-				{
-					load_file(files.paths[0]);
-				}
+				load_files(&files);
+#if defined(CUSTOM_MODAL_DIALOGS) 
 				SetWindowTitle(TextFormat("%s v%s | File: %s", tool_name, tool_version, GetFileName(files.paths[0])));
+#endif
 				unload_dropped_files();
 				save_changes_required = false;
 			}
