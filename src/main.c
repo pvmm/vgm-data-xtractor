@@ -81,7 +81,6 @@ int main()
 		{
 			if (cb_edit_mode && cb_index > 0)
 			{
-				printf("selected!\n");
 				download_block(cb_index - 1);
 			}
 			cb_edit_mode = !cb_edit_mode;

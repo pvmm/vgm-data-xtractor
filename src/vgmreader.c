@@ -156,33 +156,31 @@ bool save_block(int count, uint8_t* file_data, size_t size)
     return true;
 }
 
-size_t extract_data_blocks(uint8_t* file_data, size_t data_size)
+size_t extract_data_blocks(uint32_t data_offset, uint8_t* file_data, size_t data_size)
 {
     size_t block_count = 0;
     uint8_t *ptr = file_data;
-    uint8_t *end = file_data + data_size;
-    free(file_data);
+    const uint8_t *end = file_data + data_size;
 
     // Search for 0x67 command byte and extract data blocks
     while (ptr < end)
     {
-        if (*ptr == 0x67 && (ptr + 7 < end))
+        // detect data block
+        if (*ptr == 0x67 && (*(ptr + 1) == 0x66) && (ptr + 7 < end))
         {
-            ptr++; // skip command
+            //printf("%zu: data block found at: %lx\n", block_count, data_offset + ptr - file_data);
+	    ptr += 2; // skip command bytes (67 66)
             uint8_t type = *ptr++;  // data type
-            // compatibility mode detected, reading again.
-            if (type == 0x66) type = *ptr++;
             uint32_t size = *(uint32_t *)ptr; // size
             // ignore most significant bit
             size &= 0x7fffffff;
+            //printf("%zu: block size: %x, at: %x\n", block_count, size, data_offset + ptr - file_data + size - 8);
             ptr += 4;
 
             if (ptr + size <= end)
             {
                 blocks[block_count].type = type;
-                //printf("%zu block type: %x\n", block_count, blocks[block_count].type);
                 blocks[block_count].size = size - 8;
-                //printf("%zu block size: %u\n", block_count, blocks[block_count].size);
                 if (blocks[block_count].size > 0)
                 {
                     blocks[block_count].data = (uint8_t *)malloc(size);
@@ -215,6 +213,7 @@ size_t extract_data_blocks(uint8_t* file_data, size_t data_size)
         }
     }
 
+    free(file_data);
     return block_count;
 }
 
@@ -269,6 +268,7 @@ bool _load_gzfile(const char* filename)
     if (!check_header(header)) return false;
 
     uint32_t data_offset = get_data_offset(header);
+    //printf("data_offset = %x\n", data_offset);
 
     uint32_t eof_offset = get_eof_offset(header);
     if (!eof_offset) {
@@ -279,7 +279,7 @@ bool _load_gzfile(const char* filename)
     // Calculate the size of the data
     size_t file_size = eof_offset + 4;
     size_t data_size = file_size - data_offset;
-    //printf("File data extracted (%zu bytes)\n", data_size);
+    printf("File data extracted (%zu bytes)\n", data_size);
 
     // Allocate memory for all file commands
     uint8_t *file_data = (uint8_t *)malloc(data_size);
@@ -307,7 +307,7 @@ bool _load_gzfile(const char* filename)
 
     gzclose(file);
 
-    data_blocks = extract_data_blocks(file_data, data_size);
+    data_blocks = extract_data_blocks(data_offset, file_data, data_size);
     if (data_blocks) changed = true;
     return data_blocks >= 0;
 }
@@ -329,6 +329,7 @@ bool _load_file(const char* filename)
 
     if (!check_header(header)) return false;
     uint32_t data_offset = get_data_offset(header);
+    //printf("data_offset = %x\n", data_offset);
 
     uint32_t eof_offset = get_eof_offset(header);
     if (!eof_offset) {
@@ -367,7 +368,7 @@ bool _load_file(const char* filename)
 
     fclose(file);
 
-    data_blocks = extract_data_blocks(file_data, data_size);
+    data_blocks = extract_data_blocks(data_offset, file_data, data_size);
     if (data_blocks) changed = true;
     return data_blocks >= 0;
 }
