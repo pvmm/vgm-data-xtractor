@@ -69,7 +69,8 @@ if(PLATFORM STREQUAL "Web")
         -Wno-missing-braces
         -Wno-unused-value
         -Wno-pointer-sign
-        --use-port=zlib)
+        --use-port=zlib
+        -I${RAYGUI_SRC})
     target_link_options(${PROJECT} PUBLIC
         -sUSE_GLFW=3 -sTOTAL_MEMORY=128MB
         -sSTACK_SIZE=1MB
@@ -98,6 +99,10 @@ if(PLATFORM STREQUAL "Web")
 elseif(PLATFORM STREQUAL "Desktop")
     message("-- Configuring for desktop platform...")
     add_compile_definitions(PLATFORM_DESKTOP)
-    target_compile_options(${PROJECT} PUBLIC -Wall -Wno-unknown-pragmas -DPLATFORM=Desktop)
+    target_compile_options(${PROJECT} PUBLIC
+        -Wall
+        -Wno-unknown-pragmas
+        -DPLATFORM=Desktop
+        -I${RAYGUI_SRC})
     target_link_libraries(${PROJECT} PUBLIC raylib -lm -lz)
 endif()

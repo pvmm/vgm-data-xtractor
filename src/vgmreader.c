@@ -217,7 +217,7 @@ size_t extract_data_blocks(uint32_t data_offset, uint8_t* file_data, size_t data
     return block_count;
 }
 
-bool check_header(const char* header)
+bool check_header(const uint8_t* header)
 {
     // Check for VGM magic number ('Vgm ')
     if (header[0] != 'V' || header[1] != 'g' || header[2] != 'm' || header[3] != ' ') {
@@ -227,7 +227,7 @@ bool check_header(const char* header)
     return true;
 }
 
-uint32_t get_data_offset(const char* header)
+uint32_t get_data_offset(const uint8_t* header)
 {
     // Get the offset to the data section
     uint32_t data_offset = *(uint32_t *)(header + VGM_DATA_OFFSET);
@@ -239,7 +239,7 @@ uint32_t get_data_offset(const char* header)
     return data_offset;
 }
 
-uint32_t get_eof_offset(const char* header)
+uint32_t get_eof_offset(const uint8_t* header)
 {
     // Get the total file size from the EOF offset field
     uint32_t eof_offset = *(uint32_t *)(header + VGM_EOF_OFFSET);

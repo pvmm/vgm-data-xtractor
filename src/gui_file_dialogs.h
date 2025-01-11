@@ -132,8 +132,8 @@ int GuiFileDialog(int dialogType, const char *title, char *fileName, const char 
 
     const char *tempFileName = NULL;
     int filterCount = 0;
-    const char **filterSplit = TextSplit(filters, ';', &filterCount);
-    
+    const char **filterSplit = (const char **) TextSplit(filters, ';', &filterCount);
+
     switch (dialogType)
     {
         case DIALOG_OPEN_FILE: tempFileName = tinyfd_openFileDialog(title, fileName, filterCount, filterSplit, message, 0); break;

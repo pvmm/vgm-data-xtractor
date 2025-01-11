@@ -13,6 +13,8 @@
 #include "functions.h"
 #include "vgmreader.h"
 
+#define TITLE_SIZE 100
+
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
@@ -25,8 +27,8 @@ bool save_changes_required = false;
 
 int main()
 {
-	char title[100];
-	snprintf("%s: %s, %s", 100, tool_name, tool_description, tool_version);
+	char title[TITLE_SIZE];
+	snprintf(title, TITLE_SIZE, "%s: %s, %s", tool_name, tool_description, tool_version);
 	InitWindow(800, 600, title);
 	SetTargetFPS(60);
 
