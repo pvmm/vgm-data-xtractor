@@ -96,7 +96,13 @@ int show_about_box()
 		set_gui_lock(P_MSG_DIALOG);
 		result = GuiMessageBox(
 			(Rectangle){ GetScreenWidth() / 2 - 200, GetScreenHeight() / 2 - 180, 400, 180 },
-			"#191#About", "Hi! This is a message", "OK");
+			"#191#About VGM-data-xtractor", "\
+     GNU GENERAL PUBLIC LICENSE\n\
+       Version 3, 29 June 2007\n\
+\
+Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>\n\
+Everyone is permitted to copy and distribute verbatim copies\n\
+of this license document, but changing it is not allowed.", "OK");
 		if (result >= 0) reset_gui_lock(P_MSG_DIALOG);
 	}
 	return result;
