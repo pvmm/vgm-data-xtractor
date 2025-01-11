@@ -88,7 +88,6 @@ static struct VGMDataBlock blocks[MAX_BLOCK_COUNT];
 
 // Dropdown options
 static bool changed = false;
-static int data_blocks = 0;
 static char block_options[1000] = "#113#no blocks found";
 
 void download_block(int i)
@@ -107,7 +106,7 @@ char* get_data_blocks(void)
     {
         char filename[50];
         snprintf(block_options, 1000, "#113#no block");
-        for (int i = 0; i < data_blocks; ++i)
+        for (int i = 0; i < block_count; ++i)
         {
             const char* desc;
             const char* chip = chip_type[blocks[i].type] ? chip_type[blocks[i].type] : "???";
@@ -134,10 +133,10 @@ char* get_data_blocks(void)
     return block_options;
 }
 
-bool save_block(int count, uint8_t* file_data, size_t size)
+bool save_block(int index, uint8_t* file_data, size_t size)
 {
     char filename[100];
-    snprintf(filename, 100, "block_%i.raw", count);
+    snprintf(filename, 100, "block_%i.raw", index);
 
     FILE* file = fopen(filename, "wb");
     if (!file) {
@@ -159,8 +158,8 @@ bool save_block(int count, uint8_t* file_data, size_t size)
 
 size_t extract_data_blocks(uint32_t data_offset, uint8_t* file_data, size_t data_size)
 {
-    uint8_t *ptr = file_data;
-    const uint8_t *end = file_data + data_size;
+    uint8_t* ptr = file_data;
+    const uint8_t* end = file_data + data_size;
     size_t last_count = block_count;
 
     // Search for 0x67 command byte and extract data blocks
@@ -172,7 +171,7 @@ size_t extract_data_blocks(uint32_t data_offset, uint8_t* file_data, size_t data
             //printf("%zu: data block found at: %lx\n", block_count, data_offset + ptr - file_data);
             ptr += 2; // skip command bytes (67 66)
             uint8_t type = *ptr++;  // data type
-            uint32_t size = *(uint32_t *)ptr; // size
+            uint32_t size = *(uint32_t*)ptr; // size
             // ignore most significant bit
             size &= 0x7fffffff;
             //printf("%zu: block size: %x, at: %x\n", block_count, size, data_offset + ptr - file_data + size - 8);
@@ -184,27 +183,25 @@ size_t extract_data_blocks(uint32_t data_offset, uint8_t* file_data, size_t data
                 blocks[block_count].size = size - 8;
                 if (blocks[block_count].size > 0)
                 {
-                    blocks[block_count].data = (uint8_t *)malloc(size);
+                    blocks[block_count].data = (uint8_t*)malloc(blocks[block_count].size);
                     if (!blocks[block_count].data)
                     {
                         append_error_message("Memory allocation error");
-                        free(file_data);
-                        return 0;
+                        return block_count - last_count - 1;
                     }
-                    memcpy(blocks[block_count].data, ptr, size);
+                    memcpy(blocks[block_count].data, ptr, blocks[block_count].size);
                     if (!save_block(block_count, blocks[block_count].data, blocks[block_count].size))
                     {
                         append_error_message("Error writing \"block_%i.raw\".\n", block_count);
-                        return 0;
+                        return block_count - last_count - 1;
                     }
 
                     block_count++;
                 }
-
                 if (block_count >= MAX_BLOCK_COUNT)
                 {
                     append_error_message("Reserved memory exhausted.\n");
-                    break;
+                    return block_count - last_count - 1;
                 }
             }
             ptr += size - 8;
@@ -215,7 +212,6 @@ size_t extract_data_blocks(uint32_t data_offset, uint8_t* file_data, size_t data
         }
     }
 
-    free(file_data);
     return block_count - last_count;
 }
 
@@ -310,10 +306,10 @@ bool load_gzfile(const char* filename, bool append)
     gzclose(file);
 
     size_t result = extract_data_blocks(data_offset, file_data, data_size);
-    if (result) changed = true;
-    data_blocks = append ? data_blocks + result : result;
+    free(file_data);
 
-    return result >= 0;
+    if (result > 0) changed = true;
+    return result > 0;
 }
 
 bool load_file(const char* filename, bool append)
@@ -373,20 +369,31 @@ bool load_file(const char* filename, bool append)
     fclose(file);
 
     size_t result = extract_data_blocks(data_offset, file_data, data_size);
-    if (result) changed = true;
-    data_blocks = append ? data_blocks + result : result;
+    free(file_data);
 
-    return result >= 0;
+    if (result > 0) changed = true;
+    return result > 0;
+}
+
+void free_blocks()
+{
+    for (int i = 0; i < block_count; ++i)
+    {
+        printf("1\n");
+        free(blocks[i].data);
+        printf("2\n");
+    }
+    block_count = 0;
 }
 
 bool load_files(FilePathList* files)
 {
-    block_count = 0;
-    bool result = false;
+    free_blocks();
+    bool result = true;
 
     for (int i = 0; i < files->count; ++i)
     {
-        result |= IsFileExtension(files->paths[i], ".vgz") ?
+        result &= IsFileExtension(files->paths[i], ".vgz") ?
             load_gzfile(files->paths[i], true) : load_file(files->paths[i], true);
     }
 
