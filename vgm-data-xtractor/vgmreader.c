@@ -27,7 +27,7 @@ typedef struct {
 // Dropdown options
 static bool changed = false;
 static int data_blocks = 0;
-static char block_options[1000] = "#06#no blocks found";
+static char block_options[1000] = "#113#no blocks found";
 
 void download_block(int i)
 {
@@ -44,7 +44,7 @@ char* get_data_blocks(void)
     if (changed)
     {
         char filename[50];
-	snprintf(block_options, 1000, "#06#no block");
+	snprintf(block_options, 1000, "#113#no block");
         for (int i = 0; i < data_blocks; ++i)
         {
             strcat(block_options, ";#06#");
