@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(scaffold)
 
 # real project name
-set(PROJECT vgm-data-xtractor)
+set(PROJECT src)
 
 # get build directory name
 get_filename_component(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR} NAME)
