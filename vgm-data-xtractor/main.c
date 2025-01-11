@@ -77,7 +77,7 @@ int main()
 		}
 
 		// Dropdown at last
-		if (show_drop_down((Rectangle){ 200, 24, 120, 30 }, get_data_blocks(), &cb_index, cb_edit_mode))
+		if (show_drop_down((Rectangle){ 200, 24, 140, 30 }, get_data_blocks(), &cb_index, cb_edit_mode))
 		{
 			if (cb_edit_mode && cb_index > 0)
 			{
