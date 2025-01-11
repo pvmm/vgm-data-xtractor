@@ -145,7 +145,7 @@ int show_message(char* title, char* message)
 	return result;
 }
 
-int show_load_dialog(const char* title, const char* extension, FilePathList* files)
+int show_load_dialog(const char* title, const char* extensions, FilePathList* files)
 {
 	static bool load_error = false;
 
@@ -169,7 +169,7 @@ int show_load_dialog(const char* title, const char* extension, FilePathList* fil
 		*files = LoadDroppedFiles();
 		for (int i = 0; i < files->count; ++i)
 		{
-			if (!IsFileExtension(files->paths[i], extension))
+			if (!IsFileExtension(files->paths[i], extensions))
 			{
 				append_error_message("Wrong file type: %s", get_file_name(files->paths[i]));
 			}

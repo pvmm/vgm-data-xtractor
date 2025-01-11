@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <zlib.h>
 
 #include "raylib.h"
 #include "raygui.h"
@@ -167,30 +168,18 @@ size_t extract_data_blocks(uint8_t* file_data, size_t data_size)
     return block_count;
 }
 
-// Function to extract sample data from a VGM file
-bool load_file(const char *filename)
+bool check_header(const char* header)
 {
-    FILE *file = fopen(filename, "rb");
-    if (!file) {
-        append_error_message("Error opening file \"%s\"\n", filename);
-        return -1;
-    }
-
-    // Read VGM header
-    uint8_t header[VGM_HEADER_SIZE];
-    if (fread(header, 1, VGM_HEADER_SIZE, file) != VGM_HEADER_SIZE) {
-        append_error_message("Error reading VGM header: file too short\n");
-        fclose(file);
-        return -1;
-    }
-
     // Check for VGM magic number ('Vgm ')
     if (header[0] != 'V' || header[1] != 'g' || header[2] != 'm' || header[3] != ' ') {
         append_error_message("Invalid VGM file: VGM magic string not found\n");
-        fclose(file);
-        return -1;
+        return false;
     }
+    return true;
+}
 
+uint32_t get_data_offset(const char* header)
+{
     // Get the offset to the data section
     uint32_t data_offset = *(uint32_t *)(header + VGM_DATA_OFFSET);
     if (data_offset == 0) {
@@ -198,14 +187,42 @@ bool load_file(const char *filename)
     } else {
         data_offset += 0x34;
     }
+    return data_offset;
+}
 
+uint32_t get_eof_offset(const char* header)
+{
     // Get the total file size from the EOF offset field
     uint32_t eof_offset = *(uint32_t *)(header + VGM_EOF_OFFSET);
     if (eof_offset == 0) {
         append_error_message("Invalid EOF offset in header\n");
         fclose(file);
-        return -1;
+        return 0;
     }
+    return eof_offset;
+}
+
+bool load_gzfile(const char* filename)
+{
+    gzFile file = gzopen(filename, "rb");
+    if (!file) {
+        append_error_message("Failed to open .gz file");
+        return;
+    }
+
+    uint8_t header[VGM_HEADER_SIZE];
+    if (gzread(file, header, VGM_HEADER_SIZE)) != VGM_HEADER_SIZE) {
+        append_error_message("Error reading VGM header: file too short\n");
+        fclose(file);
+        return false;
+    }
+
+    if (!check_header(header)) return false;
+
+    uint32_t data_offset = get_data_offset(header);
+
+    uint32_t eof_offset = get_eof_offset(header);
+    if (!eof_offset) return false;
 
     // Calculate the size of the data
     size_t file_size = eof_offset + 4;
@@ -217,17 +234,83 @@ bool load_file(const char *filename)
     if (!file_data) {
         append_error_message("Memory allocation failed\n");
         fclose(file);
-        return -1;
+        return false;
     }
 
-    // Seek to the data offset and read the sample data
-    fseek(file, data_offset, SEEK_SET);
-    if (fread(file_data, 1, data_size, file) != data_size) {
-        append_error_message("Error reading sample data\n");
+    if (zseek(file, data_offset, SEEK_SET) == -1)
+    {
+        append_error_message("Error seeking commands\n");
         free(file_data);
         fclose(file);
-        return -1;
+        return false;
     }
+
+    if (zread(file, file_data, data_size) != data_size)
+    {
+        append_error_message("Error reading command data\n");
+        free(file_data);
+        fclose(file);
+        return false;
+    }
+
+    fclose(file);
+
+    data_blocks = extract_data_blocks(file_data, data_size);
+    if (data_blocks) changed = true;
+    return data_blocks >= 0;
+}
+
+// Function to extract sample data from a VGM file
+bool load_file(const char* filename)
+{
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        append_error_message("Error opening file \"%s\"\n", filename);
+        return false;
+    }
+
+    uint8_t header[VGM_HEADER_SIZE];
+    if (fread(header, 1, VGM_HEADER_SIZE, file) != VGM_HEADER_SIZE) {
+        append_error_message("Error reading VGM header: file too short\n");
+        fclose(file);
+        return false;
+    }
+
+    if (!check_header(header)) return false;
+    uint32_t data_offset = get_data_offset();
+
+    uint32_t eof_offset = get_eof_offset(header);
+    if (!eof_offset) return false;
+
+    // Calculate the size of the data
+    size_t file_size = eof_offset + 4;
+    size_t data_size = file_size - data_offset;
+    //printf("File data extracted (%zu bytes)\n", data_size);
+
+    // Allocate memory for all file commands
+    uint8_t *file_data = (uint8_t *)malloc(data_size);
+    if (!file_data) {
+        append_error_message("Memory allocation failed\n");
+        fclose(file);
+        return false;
+    }
+
+    if (fseek(file, data_offset, SEEK_SET) == -1)
+    {
+        append_error_message("Error seeking commands\n");
+        free(file_data);
+        fclose(file);
+        return false;
+    }
+
+    if (fread(file_data, 1, data_size, file) != data_size)
+    {
+        append_error_message("Error reading command data\n");
+        free(file_data);
+        fclose(file);
+        return false;
+    }
+
     fclose(file);
 
     data_blocks = extract_data_blocks(file_data, data_size);

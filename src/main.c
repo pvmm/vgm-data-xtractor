@@ -13,7 +13,7 @@
 #include "functions.h"
 #include "vgmreader.h"
 
-#define ALLOWED_FILE_EXT    ".vgm"
+#define ALLOWED_FILE_EXT    ".vgm;.vgz"
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition

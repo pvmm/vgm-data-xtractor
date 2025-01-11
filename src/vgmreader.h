@@ -3,6 +3,8 @@
 
 void download_block(int i);
 
+bool load_gzfile(char* filename);
+
 bool load_file(char* filename);
 
 char* get_data_blocks(void);

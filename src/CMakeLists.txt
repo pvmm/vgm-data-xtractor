@@ -67,7 +67,7 @@ if(PLATFORM STREQUAL "Web")
     target_link_options(${PROJECT} PUBLIC
         -sUSE_GLFW=3 -sTOTAL_MEMORY=128MB -sSTACK_SIZE=1MB -sFORCE_FILESYSTEM=1 -sASYNCIFY
         -sASYNCIFY_STACK_SIZE=1048576 -sASSERTIONS=1 --profiling --shell-file ${HTML_SHELL})
-    target_link_libraries(${PROJECT} PUBLIC raylib)
+    target_link_libraries(${PROJECT} PUBLIC raylib -lz)
     # Copy objects to build/web directory
     message("-- Installing web files...")
     add_custom_command(
@@ -86,5 +86,5 @@ elseif(PLATFORM STREQUAL "Desktop")
     message("-- Configuring for desktop platform...")
     add_compile_definitions(PLATFORM_DESKTOP)
     target_compile_options(${PROJECT} PUBLIC -Wall -Wno-unknown-pragmas -DPLATFORM=Desktop)
-    target_link_libraries(${PROJECT} PUBLIC raylib -lm)
+    target_link_libraries(${PROJECT} PUBLIC raylib -lm -lz)
 endif()
