@@ -26,12 +26,61 @@ struct VGMDataBlock {
 };
 
 static const char* type_descriptions[] = {
-    "uncompressed recorded streams",
-    "compressed recorded streams",
-    "decompression table",
-    "ROM/RAM image dumps",
+    "uncompressed streams",
+    "compressed streams",
+    "", // redundant
+    "ROM/RAM dumps",
     "RAM writes (<= 64 KB)",
     "RAM writes (> 64 KB)",
+};
+
+static const char* chip_type[256] = {
+    [0x00] = "YM2612 PCM data",
+    [0x01] = "RF5C68 PCM data",
+    [0x02] = "RF5C164 PCM data",
+    [0x03] = "PWM PCM data",
+    [0x04] = "OKIM6258 ADPCM data",
+    [0x05] = "HuC6280 PCM data",
+    [0x06] = "SCSP PCM data",
+    [0x07] = "NES APU DPCM",
+    [0x08] = "Mikey PCM data",
+    [0x09 ... 0x3F] = "uncompressed",
+    [0x40] = "YM2612 PCM data (compressed)",
+    [0x41] = "RF5C68 PCM data (compressed)",
+    [0x42] = "RF5C164 PCM data (compressed)",
+    [0x43] = "PWM PCM data (compressed)",
+    [0x44] = "OKIM6258 ADPCM data (compressed)",
+    [0x45] = "HuC6280 PCM data (compressed)",
+    [0x46] = "SCSP PCM data (compressed)",
+    [0x47] = "NES APU DPCM (compressed)",
+    [0x48] = "Mikey PCM data (compressed)",
+    [0x49 ... 0x7E] = "compressed",
+    [0x7F] = "decompression table",
+    [0x80] = "Sega PCM ROM data",
+    [0x81] = "YM2608 DELTA-T ROM data",
+    [0x82] = "YM2610 ADPCM ROM data",
+    [0x83] = "YM2610 DELTA-T ROM data",
+    [0x84] = "YMF278B ROM data",
+    [0x85] = "YMF271 ROM data",
+    [0x86] = "YMZ280B ROM data",
+    [0x87] = "YMF278B RAM data",
+    [0x88] = "Y8950 DELTA-T ROM data",
+    [0x89] = "MultiPCM ROM data",
+    [0x8A] = "uPD7759 ROM data",
+    [0x8B] = "OKIM6295 ROM data",
+    [0x8C] = "K054539 ROM data",
+    [0x8D] = "C140 ROM data",
+    [0x8E] = "K053260 ROM data",
+    [0x8F] = "Q-Sound ROM data",
+    [0x90] = "ES5505/ES5506 ROM data",
+    [0x91] = "X1-010 ROM data",
+    [0x92] = "C352 ROM data",
+    [0x93] = "GA20 ROM data",
+    [0xC0] = "RF5C68 RAM write",
+    [0xC1] = "RF5C164 RAM write",
+    [0xC2] = "NES APU RAM write",
+    [0xE0] = "SCSP RAM write",
+    [0xE1] = "ES5503 RAM write",
 };
 
 static struct VGMDataBlock blocks[MAX_BLOCK_COUNT];
@@ -56,28 +105,29 @@ char* get_data_blocks(void)
     if (changed)
     {
         char filename[50];
-	snprintf(block_options, 1000, "#113#no block");
+        snprintf(block_options, 1000, "#113#no block");
         for (int i = 0; i < data_blocks; ++i)
         {
             const char* desc;
-            strcat(block_options, ";#06#");
-	    if (blocks[i].type <= 0x3f)
+            const char* chip = chip_type[blocks[i].type];
+            if (blocks[i].type <= 0x3f)
                 desc = type_descriptions[0];
-	    else if (blocks[i].type <= 0x7e)
+            else if (blocks[i].type <= 0x7e)
                 desc = type_descriptions[1];
-	    else if (blocks[i].type == 0x7f)
+            else if (blocks[i].type == 0x7f)
                 desc = type_descriptions[2];
-	    else if (blocks[i].type <= 0xbf)
+            else if (blocks[i].type <= 0xbf)
                 desc = type_descriptions[3];
-	    else if (blocks[i].type <= 0xdf)
+            else if (blocks[i].type <= 0xdf)
                 desc = type_descriptions[4];
-	    else {
+            else {
                 desc = type_descriptions[5];
-	    }
-            snprintf(filename, 50, "block_%i.raw: %s", i, desc);
+            }
+            strcat(block_options, ";#06#");
+            snprintf(filename, 50, "block_%i.raw: %s (%s)", i, chip, desc);
             strcat(block_options, filename);
         }
-	changed = false;
+        changed = false;
     }
 
     return block_options;
