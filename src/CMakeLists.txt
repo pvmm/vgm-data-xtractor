@@ -63,10 +63,23 @@ if(PLATFORM STREQUAL "Web")
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
     add_compile_definitions(PLATFORM_WEB)
     add_compile_definitions(_DEFAULT_SOURCE)
-    target_compile_options(${PROJECT} PUBLIC -Wall -std=c99 -Wno-missing-braces -Wno-unused-value -Wno-pointer-sign)
+    target_compile_options(${PROJECT} PUBLIC
+        -Wall
+        -std=c99
+        -Wno-missing-braces
+        -Wno-unused-value
+        -Wno-pointer-sign
+        --use-port=zlib)
     target_link_options(${PROJECT} PUBLIC
-        -sUSE_GLFW=3 -sTOTAL_MEMORY=128MB -sSTACK_SIZE=1MB -sFORCE_FILESYSTEM=1 -sASYNCIFY
-        -sASYNCIFY_STACK_SIZE=1048576 -sASSERTIONS=1 --profiling --shell-file ${HTML_SHELL})
+        -sUSE_GLFW=3 -sTOTAL_MEMORY=128MB
+        -sSTACK_SIZE=1MB
+        -sFORCE_FILESYSTEM=1
+        -sASYNCIFY
+        -sASYNCIFY_STACK_SIZE=1048576
+        -sASSERTIONS=1
+        --profiling
+        --use-port=zlib
+        --shell-file ${HTML_SHELL})
     target_link_libraries(${PROJECT} PUBLIC raylib -lz)
     # Copy objects to build/web directory
     message("-- Installing web files...")

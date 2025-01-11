@@ -196,24 +196,23 @@ uint32_t get_eof_offset(const char* header)
     uint32_t eof_offset = *(uint32_t *)(header + VGM_EOF_OFFSET);
     if (eof_offset == 0) {
         append_error_message("Invalid EOF offset in header\n");
-        fclose(file);
         return 0;
     }
     return eof_offset;
 }
 
-bool load_gzfile(const char* filename)
+bool _load_gzfile(const char* filename)
 {
     gzFile file = gzopen(filename, "rb");
     if (!file) {
         append_error_message("Failed to open .gz file");
-        return;
+        return false;
     }
 
     uint8_t header[VGM_HEADER_SIZE];
-    if (gzread(file, header, VGM_HEADER_SIZE)) != VGM_HEADER_SIZE) {
+    if (gzread(file, header, VGM_HEADER_SIZE) != VGM_HEADER_SIZE) {
         append_error_message("Error reading VGM header: file too short\n");
-        fclose(file);
+        gzclose(file);
         return false;
     }
 
@@ -222,7 +221,10 @@ bool load_gzfile(const char* filename)
     uint32_t data_offset = get_data_offset(header);
 
     uint32_t eof_offset = get_eof_offset(header);
-    if (!eof_offset) return false;
+    if (!eof_offset) {
+        gzclose(file);
+        return false;
+    }
 
     // Calculate the size of the data
     size_t file_size = eof_offset + 4;
@@ -233,35 +235,34 @@ bool load_gzfile(const char* filename)
     uint8_t *file_data = (uint8_t *)malloc(data_size);
     if (!file_data) {
         append_error_message("Memory allocation failed\n");
-        fclose(file);
+        gzclose(file);
         return false;
     }
 
-    if (zseek(file, data_offset, SEEK_SET) == -1)
+    if (gzseek(file, data_offset, SEEK_SET) == -1)
     {
         append_error_message("Error seeking commands\n");
         free(file_data);
-        fclose(file);
+        gzclose(file);
         return false;
     }
 
-    if (zread(file, file_data, data_size) != data_size)
+    if (gzread(file, file_data, data_size) != data_size)
     {
         append_error_message("Error reading command data\n");
         free(file_data);
-        fclose(file);
+        gzclose(file);
         return false;
     }
 
-    fclose(file);
+    gzclose(file);
 
     data_blocks = extract_data_blocks(file_data, data_size);
     if (data_blocks) changed = true;
     return data_blocks >= 0;
 }
 
-// Function to extract sample data from a VGM file
-bool load_file(const char* filename)
+bool _load_file(const char* filename)
 {
     FILE* file = fopen(filename, "rb");
     if (!file) {
@@ -277,10 +278,13 @@ bool load_file(const char* filename)
     }
 
     if (!check_header(header)) return false;
-    uint32_t data_offset = get_data_offset();
+    uint32_t data_offset = get_data_offset(header);
 
     uint32_t eof_offset = get_eof_offset(header);
-    if (!eof_offset) return false;
+    if (!eof_offset) {
+        fclose(file);
+        return false;
+    }
 
     // Calculate the size of the data
     size_t file_size = eof_offset + 4;
@@ -316,4 +320,9 @@ bool load_file(const char* filename)
     data_blocks = extract_data_blocks(file_data, data_size);
     if (data_blocks) changed = true;
     return data_blocks >= 0;
+}
+
+bool load_file(const char* filename)
+{
+    return IsFileExtension(filename, ".vgz") ? _load_gzfile(filename) : _load_file(filename);
 }
