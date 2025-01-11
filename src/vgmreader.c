@@ -75,7 +75,7 @@ bool save_block(int count, uint8_t* file_data, size_t size)
     }
 
     fclose(file);
-    append_error_message("File saved to %s\n", filename);
+    //printf("File saved to %s\n", filename);
 
     return true;
 }
