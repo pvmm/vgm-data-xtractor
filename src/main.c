@@ -13,8 +13,6 @@
 #include "functions.h"
 #include "vgmreader.h"
 
-#define ALLOWED_FILE_EXT    ".vgm;.vgz"
-
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
@@ -53,7 +51,7 @@ int main()
 			request_load_dialog = true;
 		}
 
-		if (request_load_dialog && (result = show_load_dialog("Load VGM file", ALLOWED_FILE_EXT, &files)) >= 0)
+		if (request_load_dialog && (result = show_load_dialog("Load VGM file", &files)) >= 0)
 		{
 			if (result > 0)
 			{

@@ -145,7 +145,7 @@ int show_message(char* title, char* message)
 	return result;
 }
 
-int show_load_dialog(const char* title, const char* extensions, FilePathList* files)
+int show_load_dialog(const char* title, FilePathList* files)
 {
 	static bool load_error = false;
 
@@ -162,14 +162,14 @@ int show_load_dialog(const char* title, const char* extensions, FilePathList* fi
 	set_gui_lock(P_FILE_DIALOG);
 
 #if defined(CUSTOM_MODAL_DIALOGS) 
-	int result = GuiFileDialog(DIALOG_MESSAGE, title, _filename, "OK", "Just drag and drop your file!");
+	int result = GuiFileDialog(DIALOG_MESSAGE, title, _filename, "OK", "Just drag and drop your file.");
 	// process wrong file input
 	if (IsFileDropped())
 	{
 		*files = LoadDroppedFiles();
 		for (int i = 0; i < files->count; ++i)
 		{
-			if (!IsFileExtension(files->paths[i], extensions))
+			if (!IsFileExtension(files->paths[i], ".vgm;.vgz"))
 			{
 				append_error_message("Wrong file type: %s", get_file_name(files->paths[i]));
 			}
@@ -187,9 +187,7 @@ int show_load_dialog(const char* title, const char* extensions, FilePathList* fi
 		result = 0;
 	}
 #else
-	char filters[10];
-	snprintf(filters, 10, "*%s", extension);
-	int result = GuiFileDialog(DIALOG_OPEN_FILE, title, _filename, filters, "VGM files (*.vgm)");
+	int result = GuiFileDialog(DIALOG_OPEN_FILE, title, _filename, "*.vgm;*.vgz", "VGM files (*.vgm, *.vgz)");
 	if (result > 0) {
 		_files.paths = _paths;
 		_files.paths[0] = _filename;

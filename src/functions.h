@@ -15,7 +15,7 @@ int show_about_box(void);
 
 int show_message(char* title, char* message);
 
-int show_load_dialog(const char* title, const char* extension, FilePathList* files);
+int show_load_dialog(const char* title, FilePathList* files);
 
 int show_drop_down(Rectangle bounds, char* options, int* index, bool status);
 
