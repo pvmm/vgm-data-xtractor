@@ -41,8 +41,6 @@ void set_gui_lock(enum priority p);
 
 void reset_gui_lock(enum priority p);
 
-void disable_gui(bool cond);
-
 bool gui_status(enum priority p);
 
 bool gui_status_not(enum priority p);

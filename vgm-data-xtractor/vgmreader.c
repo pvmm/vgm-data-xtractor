@@ -5,6 +5,7 @@
 
 #include "raylib.h"
 #include "raygui.h"
+#include "functions.h"
 
 #if defined(PLATFORM_WEB)
     #define CUSTOM_MODAL_DIALOGS            // Force custom modal dialogs usage
@@ -31,10 +32,9 @@ static char block_options[1000] = "#06#no blocks found";
 void download_block(int i)
 {
 #if defined(PLATFORM_WEB)
-// Download file from MEMFS (emscripten memory filesystem)
-// NOTE: Second argument must be a simple filename (we can't use directories)
     char filename[50];
     snprintf(filename, 50, "block_%i.raw", i);
+    // Download file from MEMFS (emscripten memory filesystem)
     emscripten_run_script(TextFormat("saveFileFromMEMFSToDisk('%s','%s')", filename, GetFileName(filename)));
 #endif
 }
@@ -64,18 +64,18 @@ bool save_block(int count, uint8_t* file_data, size_t size)
 
     FILE* file = fopen(filename, "wb");
     if (!file) {
-        printf("Error opening file \"%s\"\n", filename);
+        append_error_message("Error opening file \"%s\"\n", filename);
         return false;
     }
 
     if (fwrite(file_data, 1, size, file) != size) {
-        printf("Error writing raw sample: out of space?\n");
+        append_error_message("Error writing raw sample: out of space?\n");
         fclose(file);
         return false;
     }
 
     fclose(file);
-    printf("File saved to %s\n", filename);
+    append_error_message("File saved to %s\n", filename);
 
     return true;
 }
@@ -127,7 +127,7 @@ size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* b
 
                 if (block_count >= MAX_BLOCK_COUNT)
                 {
-                    printf("reserved memory exhausted\n");
+                    append_error_message("Reserved memory exhausted.\n");
                     break;
                 }
             }
@@ -139,7 +139,6 @@ size_t extract_data_blocks(uint8_t* file_data, size_t data_size, VGMDataBlock* b
         }
     }
 
-    //printf("%zu data blocks found.\n", block_count);
     return block_count;
 }
 
@@ -148,21 +147,21 @@ bool load_file(const char *filename)
 {
     FILE *file = fopen(filename, "rb");
     if (!file) {
-        printf("Error opening file \"%s\"\n", filename);
+        append_error_message("Error opening file \"%s\"\n", filename);
         return -1;
     }
 
     // Read VGM header
     uint8_t header[VGM_HEADER_SIZE];
     if (fread(header, 1, VGM_HEADER_SIZE, file) != VGM_HEADER_SIZE) {
-        printf("Error reading VGM header: file too short\n");
+        append_error_message("Error reading VGM header: file too short\n");
         fclose(file);
         return -1;
     }
 
     // Check for VGM magic number ('Vgm ')
     if (header[0] != 'V' || header[1] != 'g' || header[2] != 'm' || header[3] != ' ') {
-        printf("Invalid VGM file: VGM magic string not found\n");
+        append_error_message("Invalid VGM file: VGM magic string not found\n");
         fclose(file);
         return -1;
     }
@@ -178,7 +177,7 @@ bool load_file(const char *filename)
     // Get the total file size from the EOF offset field
     uint32_t eof_offset = *(uint32_t *)(header + VGM_EOF_OFFSET);
     if (eof_offset == 0) {
-        printf("Invalid EOF offset in header\n");
+        append_error_message("Invalid EOF offset in header\n");
         fclose(file);
         return -1;
     }
@@ -186,12 +185,12 @@ bool load_file(const char *filename)
     // Calculate the size of the data
     size_t file_size = eof_offset + 4;
     size_t data_size = file_size - data_offset;
-    printf("File data extracted (%zu bytes)\n", data_size);
+    //printf("File data extracted (%zu bytes)\n", data_size);
 
     // Allocate memory for all file commands
     uint8_t *file_data = (uint8_t *)malloc(data_size);
     if (!file_data) {
-        perror("Memory allocation failed\n");
+        append_error_message("Memory allocation failed\n");
         fclose(file);
         return -1;
     }
@@ -199,7 +198,7 @@ bool load_file(const char *filename)
     // Seek to the data offset and read the sample data
     fseek(file, data_offset, SEEK_SET);
     if (fread(file_data, 1, data_size, file) != data_size) {
-        printf("Error reading sample data\n");
+        append_error_message("Error reading sample data\n");
         free(file_data);
         fclose(file);
         return -1;
