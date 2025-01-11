@@ -21,3 +21,7 @@ And to execute vgmdata in the browser, you need a http server. Just execute this
 python -m http.server 8080
 ```
 and point the browser to `localhost:8080` or you can just access the latest version [here](https://pvmm.github.io/vgm-data-xtractor/)
+
+# Missing features
+
+* data block decompression;
