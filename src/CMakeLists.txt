@@ -34,7 +34,7 @@ FetchContent_MakeAvailable(raylib)
 # Fetch raygui library
 FetchContent_Declare(
     raygui
-    GIT_REPOSITORY "git@github.com:raysan5/raygui.git"
+    GIT_REPOSITORY "https://github.com/raysan5/raygui"
     GIT_TAG "master"
     GIT_PROGRESS TRUE
     GIT_SHALLOW TRUE
@@ -42,7 +42,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(raygui)
 
 # Get path to raygui.h
-file(GLOB_RECURSE raygui_h ${raygui_SOURCE_DIR} raygui.h)
+file(GLOB_RECURSE raygui_h ${raygui_SOURCE_DIR}/raygui.h)
 list(GET raygui_h 0 raygui_h) # first element of list
 get_filename_component(RAYGUI_SRC ${raygui_h} DIRECTORY)
 message("-- raygui directory set to ${RAYGUI_SRC}")

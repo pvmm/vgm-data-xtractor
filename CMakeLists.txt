@@ -21,8 +21,10 @@ endfunction()
 # Configure and build projects
 function(build_target)
 	configure_target(${ARGV})
-	execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/${ARGV0}
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}"
+	set(TARGET "${ARGV0}")
+	list(REMOVE_AT ARGV 0)
+	execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/${TARGET}
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}"
 		COMMAND_ERROR_IS_FATAL ANY)
 endfunction()
 
@@ -35,13 +37,13 @@ function(build_emcc_target)
 	set(TARGET "${ARGV0}")
 	list(REMOVE_AT ARGV 0)
 	execute_process(
-		COMMAND ${CMAKE_COMMAND} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_TOOLCHAIN_FILE=$ENV{EMROOT}/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_C_COMPILER=emcc ${ARGV} -B ${BIN_DIR} -S .
+		COMMAND ${CMAKE_COMMAND} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_TOOLCHAIN_FILE=$ENV{EMROOT}/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_C_COMPILER=emcc ${ARGV} -B ${CMAKE_BINARY_DIR}/${TARGET} -S .
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}"
 		COMMAND_ERROR_IS_FATAL ANY)
-	if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/${BIN_DIR})
-		message(FATAL_ERROR "directory ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/${BIN_DIR} not found")
+	if(NOT EXISTS ${CMAKE_BINARY_DIR}/${TARGET})
+		message(FATAL_ERROR "directory ${CMAKE_BINARY_DIR}/${TARGET} not found")
 	endif()
-	execute_process(COMMAND ${CMAKE_COMMAND} --build ${BIN_DIR}
+	execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/${TARGET}
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}"
 		COMMAND_ERROR_IS_FATAL ANY)
 endfunction()
