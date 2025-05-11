@@ -88,14 +88,14 @@ if(PLATFORM STREQUAL "Web")
         TARGET ${PROJECT} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/resources
-        ${CMAKE_CURRENT_SOURCE_DIR}/../docs)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../html)
     add_custom_command(
         TARGET ${PROJECT} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_BINARY_DIR}/index.html
         ${CMAKE_CURRENT_BINARY_DIR}/index.js
         ${CMAKE_CURRENT_BINARY_DIR}/index.wasm
-        ${CMAKE_CURRENT_SOURCE_DIR}/../docs)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../html)
 elseif(PLATFORM STREQUAL "Desktop")
     message("-- Configuring for desktop platform...")
     add_compile_definitions(PLATFORM_DESKTOP)
