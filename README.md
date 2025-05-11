@@ -10,13 +10,13 @@ cmake -B build -S .
 ```
 This command will create the executable in `vgm-data-xtractor/build/vgm-data-xtractor`
 
-# Running webassembly vgm-data-xtractor
+# Running it in webassembly
 
 To compile it using webassembly, you use PLATFORM=Web:
 ```
 cmake -B build -S . -DPLATFORM=Web
 ```
-And to execute vgm-data-xtractor in the browser, you need a http server. Just execute this inside the `html` directory:
+And to execute it in the browser, you need a http server. Just execute this inside the `html` directory:
 ```
 python -m http.server 8080
 ```
