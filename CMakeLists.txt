@@ -10,18 +10,18 @@ get_filename_component(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR} NAME)
 function(configure_target)
 	set(TARGET "${ARGV0}")
 	list(REMOVE_AT ARGV 0)
-	execute_process(COMMAND ${CMAKE_COMMAND} -B ${BIN_DIR} -S . ${ARGV}
+	execute_process(COMMAND ${CMAKE_COMMAND} -B ${CMAKE_BINARY_DIR}/${TARGET} -S . ${ARGV}
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}"
 		COMMAND_ERROR_IS_FATAL ANY)
-	if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}/${BIN_DIR})
-		message(FATAL_ERROR "directory ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}/${BIN_DIR} not found")
+	if(NOT EXISTS ${CMAKE_BINARY_DIR}/${TARGET})
+		message(FATAL_ERROR "directory ${CMAKE_BINARY_DIR}/${TARGET} not found")
 	endif()
 endfunction()
 
 # Configure and build projects
 function(build_target)
 	configure_target(${ARGV})
-	execute_process(COMMAND ${CMAKE_COMMAND} --build ${BIN_DIR}
+	execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/${ARGV0}
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${ARGV0}"
 		COMMAND_ERROR_IS_FATAL ANY)
 endfunction()
@@ -57,7 +57,8 @@ endif()
 if(DEFINED USE_EMCC)
 	# Install emsdk and update EMROOT and PATH
 	build_target(emsdk)
-	set(ENV{EMROOT} ${CMAKE_CURRENT_SOURCE_DIR}/emsdk/${BIN_DIR}/emsdk/src/emsdk/upstream/emscripten)
+	set(ENV{EMROOT} ${CMAKE_CURRENT_SOURCE_DIR}/${BIN_DIR}/emsdk/emsdk/src/emsdk/upstream/emscripten)
+	message(ENV{EMROOT} = $ENV{EMROOT})
 	set(ENV{PATH} "$ENV{PATH}:$ENV{EMROOT}")
 	set(CMAKE_PROGRAM_PATH $ENV{EMROOT})
 	message("-- Added $ENV{EMROOT} to PATH")
