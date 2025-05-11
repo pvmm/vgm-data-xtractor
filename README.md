@@ -16,7 +16,7 @@ To compile it using webassembly, you use PLATFORM=Web:
 ```
 cmake -B build -S . -DPLATFORM=Web
 ```
-And to execute vgmdata in the browser, you need a http server. Just execute this inside the `docs` directory:
+And to execute vgm-data-xtractor in the browser, you need a http server. Just execute this inside the `docs` directory:
 ```
 python -m http.server 8080
 ```
